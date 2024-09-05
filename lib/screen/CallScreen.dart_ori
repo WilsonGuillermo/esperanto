@@ -1,0 +1,75 @@
+//Frontend** (Flutter con WebRTC)
+
+import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+class CallScreen extends StatefulWidget {
+  @override
+  _CallScreenState createState() => _CallScreenState(); }
+
+class _CallScreenState extends State<CallScreen> {
+  RTCPeerConnection _peerConnection = RTCPeerConnection();
+  IO.Socket socket = IO.Socket();
+  
+  @override
+  void initState() {
+    super.initState();
+    _connectToSocket();
+    _initializePeerConnection();
+  }
+
+  void _connectToSocket() {
+    socket = IO.io('http://192.168.1.113', <String, dynamic>{
+      'transports': ['websocket'],
+    });
+
+    socket.on('call', (data) {
+      _handleIncomingCall(data);
+    });
+
+    socket.on('answer', (data) {
+      _handleAnswer(data);
+    });
+
+    socket.on('candidate', (data) {
+      _handleCandidate(data);
+    });
+  }
+
+  void _initializePeerConnection() async {
+    _peerConnection = await createPeerConnection({
+      'iceServers': [
+        {'url': 'stun:stun.l.google.com:19302'},
+      ],
+    });
+
+    _peerConnection.onIceCandidate = (RTCIceCandidate candidate) {
+      socket.emit('candidate', {'candidate': candidate.toMap()});
+    };
+
+    _peerConnection.onAddStream = (MediaStream stream) {
+      // Add remote stream to your UI
+    };
+  }
+
+  void _handleIncomingCall(Map<String, dynamic> data) {
+    // Handle incoming call and create answer
+  }
+
+  void _handleAnswer(Map<String, dynamic> data) {
+    // Handle answer from remote peer
+  }
+
+  void _handleCandidate(Map<String, dynamic> data) {
+    // Add ICE candidate to peer connection
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Call Screen')),
+      body: Center(child: Text('Call Screen')),
+    );
+  }
+}

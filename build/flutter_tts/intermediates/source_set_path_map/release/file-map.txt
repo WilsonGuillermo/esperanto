@@ -1,0 +1,14 @@
+com.tundralabs.fluttertts.flutter_tts-jetified-window-java-1.0.0-beta04-0 C:\Users\wilson.mosquera\.gradle\caches\8.9\transforms\34f45dc09f64d8b5d8af32f41c588c9b\transformed\jetified-window-java-1.0.0-beta04\res
+com.tundralabs.fluttertts.flutter_tts-lifecycle-runtime-2.3.1-1 C:\Users\wilson.mosquera\.gradle\caches\8.9\transforms\404b596ae9aa2424ff77a4173d01a2d4\transformed\lifecycle-runtime-2.3.1\res
+com.tundralabs.fluttertts.flutter_tts-jetified-core-ktx-1.8.0-2 C:\Users\wilson.mosquera\.gradle\caches\8.9\transforms\4720d95b12c5843d6d3b4d80e70bd243\transformed\jetified-core-ktx-1.8.0\res
+com.tundralabs.fluttertts.flutter_tts-jetified-annotation-experimental-1.1.0-3 C:\Users\wilson.mosquera\.gradle\caches\8.9\transforms\529101c3330a30dde1a6992a902e83ee\transformed\jetified-annotation-experimental-1.1.0\res
+com.tundralabs.fluttertts.flutter_tts-core-1.8.0-4 C:\Users\wilson.mosquera\.gradle\caches\8.9\transforms\703f9cc4af4d4e7207d6e46adebd65ac\transformed\core-1.8.0\res
+com.tundralabs.fluttertts.flutter_tts-jetified-window-1.0.0-beta04-5 C:\Users\wilson.mosquera\.gradle\caches\8.9\transforms\c622481d44d3b36497bc5fd595b2a3a3\transformed\jetified-window-1.0.0-beta04\res
+com.tundralabs.fluttertts.flutter_tts-main-6 C:\Users\wilson.mosquera\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_tts-4.0.2\android\src\main\res
+com.tundralabs.fluttertts.flutter_tts-release-7 C:\Users\wilson.mosquera\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_tts-4.0.2\android\src\release\res
+com.tundralabs.fluttertts.flutter_tts-pngs-8 C:\Users\wilson.mosquera\StudioProjects\olimpique\build\flutter_tts\generated\res\pngs\release
+com.tundralabs.fluttertts.flutter_tts-resValues-9 C:\Users\wilson.mosquera\StudioProjects\olimpique\build\flutter_tts\generated\res\resValues\release
+com.tundralabs.fluttertts.flutter_tts-rs-10 C:\Users\wilson.mosquera\StudioProjects\olimpique\build\flutter_tts\generated\res\rs\release
+com.tundralabs.fluttertts.flutter_tts-mergeReleaseResources-11 C:\Users\wilson.mosquera\StudioProjects\olimpique\build\flutter_tts\intermediates\incremental\release\mergeReleaseResources\merged.dir
+com.tundralabs.fluttertts.flutter_tts-mergeReleaseResources-12 C:\Users\wilson.mosquera\StudioProjects\olimpique\build\flutter_tts\intermediates\incremental\release\mergeReleaseResources\stripped.dir
+com.tundralabs.fluttertts.flutter_tts-merged_res-13 C:\Users\wilson.mosquera\StudioProjects\olimpique\build\flutter_tts\intermediates\merged_res\release

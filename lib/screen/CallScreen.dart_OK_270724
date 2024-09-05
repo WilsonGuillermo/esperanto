@@ -1,0 +1,152 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:socket_io_client/socket_io_client.dart' as i_o;
+
+import 'package:olimpique/services/peer_connection_service.dart';
+import 'package:olimpique/configuration/parametres.dart';
+
+class CallScreen extends StatefulWidget {
+  @override
+  _CallScreenState createState() => _CallScreenState(); }
+
+class _CallScreenState extends State<CallScreen> {
+  i_o.Socket? _socket;
+  RTCPeerConnection? _peerConnection;
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  String serveurJS = Parametres.serveurJS;
+  int puertoRTC = Parametres.portwebRTC;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRenderers();
+    _connectSocket();
+  }
+
+  void _initRenderers() async {
+    await _localRenderer.initialize();
+    await _remoteRenderer.initialize();
+  }
+
+  void _connectSocket() {
+    print("serveur JS");
+    print('$serveurJS:$puertoRTC');
+
+    _socket = i_o.io('$serveurJS:$puertoRTC', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+    _socket!.connect();
+
+    _socket!.onConnect((_) {
+      print('Connected to socket server');
+      _initializePeerConnection();
+    });
+
+    _socket!.onDisconnect((_) {
+      print('Disconnected from socket server');
+    });
+
+    _socket!.on('call', (data) async {
+      print('Received call: $data');
+      // Handle incoming call
+    });
+
+    _socket!.on('candidate', (data) async {
+      print('Received candidate: $data');
+      // Handle ICE candidate
+    });
+
+    _socket!.on('answer', (data) async {
+      print('Received answer: $data');
+      // Handle answer
+    });
+  }
+
+  Future<void> _initializePeerConnection() async {
+    try {
+      _peerConnection = await newPeerConnection(
+        _socket,
+        _remoteRenderer,
+        _localRenderer,
+            (RTCIceCandidate candidate) {
+          _socket!.emit('candidate', {
+            'candidate': candidate.candidate,
+            'sdpMid': candidate.sdpMid,
+            'sdpMLineIndex': candidate.sdpMLineIndex,
+          });
+        },
+      );
+      print('PeerConnection initialized');
+    } catch (e) {
+      print('Failed to initialize PeerConnection: $e');
+    }
+  }
+
+  Future<void> _makeCall() async {
+    if (_peerConnection == null) {
+      print('PeerConnection is not initialized');
+      return;
+    }
+
+    try {
+      print("Attempting to make a call");
+      RTCSessionDescription offer = await _peerConnection!.createOffer({});
+      print("Offer created: ${offer.sdp}");
+      await _peerConnection!.setLocalDescription(offer);
+      print("Local description set");
+      _socket!.emit('call', offer.toMap());
+      print("Offer sent to server");
+    } catch (e) {
+      print('Failed to create offer: $e');
+    }
+  }
+
+  void _hangUp() {
+    print("Attempting to hang up");
+    _peerConnection!.close();
+    _peerConnection = null;
+  }
+
+  @override
+  void dispose() {
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Call Screen'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: RTCVideoView(_localRenderer),
+          ),
+          Expanded(
+            child: RTCVideoView(_remoteRenderer),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.call),
+                onPressed: _makeCall,
+              ),
+              IconButton(
+                icon: const Icon(Icons.call_end),
+                onPressed: _hangUp,
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+

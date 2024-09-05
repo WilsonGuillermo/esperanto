@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+//import 'package:speech_to_text/speech_to_text.dart' as stt;
+//import 'package:flutter_tts/flutter_tts.dart';
+//import 'package:http/http.dart' as http;
+//import 'dart:convert';
+//import 'package:olimpique/configuration/parametres.dart';
+//import 'package:olimpique/main.dart';
+import 'package:olimpique/services/TranslateText.dart';
+
+class TranslationScreen extends StatelessWidget {
+  const TranslationScreen({Key? key}): super(key: key); // On ajout const
+
+  @override
+  _TranslationScreenState createState() => _TranslationScreenState();
+}
+
+class _TranslationScreenState extends State<TranslationScreen> {
+  final TextEditingController _controller = TextEditingController();
+  String _translatedText = '';
+  String _direction = 'en_to_es'; // Puedes cambiar esto según lo necesites
+
+  void _translate() async {
+    String text = _controller.text;
+    try {
+      String translation = await translateText(text, _direction);
+      setState(() {
+        _translatedText = translation;
+      });
+    } catch (e) {
+      setState(() {
+        _translatedText = 'Error: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Translator')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _controller,
+              decoration: const InputDecoration(
+                labelText: 'Enter text',
+              ),
+            ),
+            DropdownButton<String>(
+              value: _direction,
+              items: const [
+                DropdownMenuItem(
+                    value: 'en_to_es',
+                    child: Text('English to Spanish')
+                ),
+                DropdownMenuItem(
+                    value: 'es_to_en',
+                    child: Text('Spanish to English')
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _direction = value!;
+                });
+              },
+            ),
+            ElevatedButton(
+              onPressed: _translate,
+              child: const Text('Translate'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _translatedText,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,26 @@
+   # Flutter related
+   .dart_tool/
+   .idea/
+   .packages
+   .flutter-plugins
+   .flutter-plugins-dependencies
+   .metadata
+   build/
+   ios/Flutter/Flutter.framework/
+   ios/Flutter/Flutter.podspec
+
+   # Obfuscate build output
+   app.*
+
+   # Android related
+   .gradle/
+   local.properties
+   .idea/workspace.xml
+   .idea/libraries
+   .DS_Store
+   *.iml
+   *.hprof
+   *.log
+
+   # Generated files
+   pubspec.lock

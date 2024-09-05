@@ -1,0 +1,2 @@
+C:\Users\wilson.mosquera\StudioProjects\olimpique\android\app\src\main\kotlin\fr\olimpique\olimpique\MainActivity.kt
+C:\Users\wilson.mosquera\StudioProjects\olimpique\android\app\src\main\java\fr\olimpique\MainActivity.kt

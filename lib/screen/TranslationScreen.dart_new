@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+//import 'package:speech_to_text/speech_to_text.dart' as stt;
+//import 'package:flutter_tts/flutter_tts.dart';
+//import 'package:http/http.dart' as http;
+import 'dart:convert';
+//import 'package:olimpique/configuration/parametres.dart';
+//import 'package:olimpique/main.dart';
+import 'package:olimpique/services/TranslateText.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:olimpique/configuration/parametres.dart';
+
+
+class TranslationScreen extends StatefulWidget {
+  const TranslationScreen({super.key});
+
+  @override
+  _TranslationScreenState createState() => _TranslationScreenState(); }
+
+class _TranslationScreenState extends State<TranslationScreen> {
+  late FlutterTts _flutterTts;
+  late stt.SpeechToText _speech;
+  bool _isListening = false;
+  String _text = 'Press the button and start speaking';
+  String _translatedText = '';
+  String _sourceLang = 'en'; // Idioma fuente por defecto
+  String _targetLang = 'es'; // Idioma objetivo por defecto
+  String url = Parametres.direccionBackend;
+  int puerto = Parametres.puerto;
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+    _flutterTts = FlutterTts();
+    _initializeSpeech();
+  }
+
+  void _initializeSpeech() async {
+    bool available = await _speech.initialize(
+      onStatus: (val) => print('onStatus: $val'),
+      onError: (val) => print('onError: $val'),
+    );
+    if (!available) {
+      print('Speech recognition not available');
+    }
+  }
+
+  void _startListening() async {
+    bool available = await _speech.initialize(
+      onStatus: (val) => print('onStatus: $val'),
+      onError: (val) => print('onError: $val'),
+    );
+    if (available) {
+      setState(() => _isListening = true);
+      _speech.listen(
+        onResult: (val) => setState(() {
+          _text = val.recognizedWords;
+          if (val.hasConfidenceRating && val.confidence > 0) {
+            _translateText(_text);
+          }
+        }),
+      );
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
+  void _stopListening() {
+    setState(() => _isListening = false);
+    _speech.stop();
+  }
+
+  Future<void> _translateText(String text) async {
+    final response = await http.post(
+      Uri.parse('$url:$puerto/translate'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(
+        <String, String>{
+          'text': text,
+        }
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _translatedText = jsonDecode(response.body)['translatedText'];
+      });
+      _speak(_translatedText);
+    } else {
+      throw Exception('Failed to translate text');
+    }
+  }
+
+  Future<void> _speak(String text) async {
+    await _flutterTts.speak(text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Translation App'),
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: Center(
+              child: Text(
+                _text,
+                style: TextStyle(fontSize: 24.0),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                _translatedText,
+                style: TextStyle(fontSize: 24.0),
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _isListening ? _stopListening : _startListening,
+        child: Icon(_isListening ? Icons.mic : Icons.mic_none),
+      ),
+    );
+  }
+}

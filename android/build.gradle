@@ -1,0 +1,35 @@
+buildscript {
+    ext.kotlin_version = '1.7.10'
+    //ext.kotlin_version = '1.6.0' // version kotlin compatible con gradle 7.3
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        //noinspection GradlePluginVersion
+        classpath 'com.android.tools.build:gradle:8.5.1'
+        //classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        //implementation 'com.github.User:Repo:Tag'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
+

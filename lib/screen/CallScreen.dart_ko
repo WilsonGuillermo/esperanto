@@ -1,0 +1,130 @@
+// Modificar el archivo `CallScreen` para usar el nuevo servicio
+
+// En tu archivo `CallScreen`, importa el nuevo archivo y usa la función importada.
+
+
+import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:olimpique/services/peer_connection_service.dart';  // Importa el nuevo archivo
+import 'package:olimpique/configuration/parametres.dart';
+
+
+class CallScreen extends StatefulWidget {
+  @override
+  _CallScreenState createState() => _CallScreenState(); }
+
+class _CallScreenState extends State<CallScreen> {
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  RTCPeerConnection? _peerConnection;
+  IO.Socket? _socket;
+  String backend = Parametres.direccionBackend;
+  int puertoRTC = Parametres.portwebRTC;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+    _initRenderers();
+    _connectSocket();
+    _createAndSetupPeerConnection(); // Llama a la nueva función
+  }
+
+  @override
+  void dispose() {
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
+    _peerConnection?.close();
+    _socket.dispose();
+    super.dispose();
+  }
+
+  void _initRenderers() async {
+    await _localRenderer.initialize();
+    await _remoteRenderer.initialize();
+    _createAndSetupPeerConnection();
+  }
+
+  void _connectSocket() {
+    _socket = IO.io('http://$backend:$puertoRTC', <String, dynamic>{
+      'transports': ['websocket'],
+    });
+
+    _socket.on('connect', (_) {
+      print('Connected to the signaling server');
+    });
+
+    _socket.on('offer', (data) async {
+      await _peerConnection.setRemoteDescription(RTCSessionDescription(data['sdp'], data['type']));
+      var answer = await _peerConnection.createAnswer();
+      await _peerConnection.setLocalDescription(answer);
+      _socket.emit('answer', {
+        'sdp': answer.sdp,
+        'type': answer.type,
+      });
+    });
+
+    _socket.on('answer', (data) {
+      _peerConnection.setRemoteDescription(RTCSessionDescription(data['sdp'], data['type']));
+    });
+
+    _socket.on('candidate', (data) {
+      _peerConnection.addCandidate(RTCIceCandidate(data['candidate'], data['sdpMid'], data['sdpMLineIndex']));
+    });
+  }
+
+  Future<void> _createAndSetupPeerConnection() async {
+    _peerConnection = await newPeerConnection(
+      _socket,
+      _remoteRenderer,
+      _localRenderer,
+      (RTCIceCandidate candidate) {
+        _socket.emit('candidate', {
+          'candidate': candidate.candidate,
+          'sdpMid': candidate.sdpMid,
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+        });
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Call Screen'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: RTCVideoView(_localRenderer),
+          ),
+          Expanded(
+            child: RTCVideoView(_remoteRenderer),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          var offer = await _peerConnection.createOffer();
+          await _peerConnection.setLocalDescription(offer);
+          _socket.emit('offer', {
+            'sdp': offer.sdp,
+            'type': offer.type,
+          });
+        },
+        child: Icon(Icons.call),
+      ),
+    );
+  }
+
+  // Asegúrate de tener permisos adecuados Solicita permisos para acceder a la cámara y el micrófono.
+  void _requestPermissions() async {
+    await Permission.camera.request();
+    await Permission.microphone.request();
+  }
+
+}
