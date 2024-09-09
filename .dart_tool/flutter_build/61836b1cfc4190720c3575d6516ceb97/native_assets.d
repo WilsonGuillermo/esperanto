@@ -1,1 +1,0 @@
- C:\\Users\\wilson.mosquera\\StudioProjects\\olimpique\\.dart_tool\\flutter_build\\61836b1cfc4190720c3575d6516ceb97\\native_assets.yaml: 

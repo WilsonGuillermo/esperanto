@@ -72,9 +72,18 @@ class _CallScreenState extends State<CallScreen> {
     _peerConnection ??= await newPeerConnection(_socket!, _remoteRenderer, _localRenderer, (candidate) {
         _socket?.emit('candidate', candidate.toMap());
       });
-    var offer = await _peerConnection!.createOffer();
+
+    // Créer l'offre
+    RTCSessionDescription offer = await _peerConnection!.createOffer();
     await _peerConnection!.setLocalDescription(offer);
-    _socket?.emit('offer', offer.toMap());
+
+    // Emettre l'offre à l'autre peer
+    _socket?.emit('offer', {
+      'sdp': offer.sdp,
+      'type': offer.type,
+    });
+
+    print("Offre envoyée");
   }
 
   Future<void> _hangUp() async {

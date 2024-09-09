@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:socket_io_client/socket_io_client.dart' as i_o; // IO
 import 'package:olimpique/configuration/parametres.dart';
@@ -7,6 +8,8 @@ Future<RTCPeerConnection> newPeerConnection(
   RTCVideoRenderer remoteRenderer,
   RTCVideoRenderer localRenderer,
   Function(RTCIceCandidate) onIceCandidate) async {
+
+    // Configuration des serveurs ICE
     final Map<String, dynamic> configuration = {
       'iceServers': [
         {'urls': 'stun:${Parametres.direccionStun}:${Parametres.puertoStun}'},
@@ -30,16 +33,40 @@ Future<RTCPeerConnection> newPeerConnection(
       'optional': [],
     };
 
+    // Creation de la RTCPeerConnetion
     RTCPeerConnection peerConnection = await createPeerConnection(configuration, offerSdpConstraints);
 
-    peerConnection.onIceCandidate = (candidate) {
-      onIceCandidate(candidate);
+    // Envoyer le ICE à l'autre peer
+    peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
+      if ( candidate != null ) {
+        //onIceCandidate(candidate); modification 070924
+        // Emettre le candidate ICE utilisant la socket
+        socket?.emit('candidate', {
+          'candidate': candidate.candidate,
+          'sdpMid': candidate.sdpMid,
+          'sdpMLineIndex': candidate.sdpMLineIndex,
+        });
+      }
     };
 
-    peerConnection.onAddStream = (stream) {
+    // Traiter le stream de la video ou audio entrant
+    peerConnection?.onAddStream = (MediaStream stream) {
       remoteRenderer.srcObject = stream;
     };
 
+    peerConnection.onTrack = ( RTCTrackEvent event ) {
+      if ( event.track.kind == 'video' ) {
+        remoteRenderer.srcObject = event.streams[0]; // On montre la video remote
+      }
+    };
+
+    // Obtenir le stream de la camera-microphone local sans constraint
+    //MediaStream localStream = await navigator.mediaDevices.getUserMedia({
+    //  'audio': true,
+    //  'video': true,
+    //});
+
+    // Obtenir le stream de la camera-microphone local, camera Frontal ou derriere
     MediaStream localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true,
       'video': {
@@ -47,8 +74,9 @@ Future<RTCPeerConnection> newPeerConnection(
       },
     });
 
-    localRenderer.srcObject = localStream;
-    peerConnection.addStream(localStream);
+    // Ajouter le stream local à la connexion
+    localRenderer.srcObject = localStream; // on montre la video local
+    peerConnection?.addStream(localStream);
 
     return peerConnection;
 }

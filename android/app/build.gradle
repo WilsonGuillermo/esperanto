@@ -42,7 +42,7 @@ android {
         release {
             keyAlias 'my-key-alias'
             keyPassword 'sii2024'
-            storeFile file('C:/Users/wilson.mosquera/StudioProjects/olimpique/lib/keystore/my-release-key.jks')
+            storeFile file('C:/Users/Wilson/StudioProjects/olimpique/lib/keystore/my-release-key.jks ')
             storePassword 'sii2024'
         }
     }

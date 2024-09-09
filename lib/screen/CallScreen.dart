@@ -63,42 +63,95 @@ class _CallScreenState extends State<CallScreen> {
     });
 
     _socket!.on('offer', (data) async {
-      print("-------------------------------");
-      print('Received offer: $data');
-      print("-------------------------------");
-      RTCSessionDescription offer = RTCSessionDescription(data['sdp'], data['type']);
-      await _peerConnection?.setRemoteDescription(offer);
-      if (_peerConnection != null) {
-        RTCSessionDescription answer = await _peerConnection!.createAnswer();
-        await _peerConnection?.setLocalDescription(answer);
-        _socket?.emit('answer', {
-          'sdp': answer.sdp,
-          'type': answer.type,
-        });
+      try {
         print("-------------------------------");
-        print('Sent answer: $answer');
+        print('Received offer: $data');
         print("-------------------------------");
-      } else {
-        print("-------------------------------");
-        print("Error: PeerConnection no esta inicializada");
-        print("-------------------------------");
+
+        // Creation de l'offer avec les donnés reçues
+        RTCSessionDescription offer = RTCSessionDescription(
+            data['sdp'], data['type']);
+
+        // Etablir la description remote ( pour savoir que propose l'autre peer )
+        await _peerConnection?.setRemoteDescription(offer);
+
+        // Si la peerConnection a été créée, creation de la réponse (answer )
+        if (_peerConnection != null) {
+          // La réponse permet d'accepter la reception de la video et de l'audio
+          RTCSessionDescription answer = await _peerConnection!.createAnswer(
+              {
+                'mandatory': {
+                  'OfferToReceiveAudio': true, // on est sur de recevoir l'audio
+                  'OfferToReceiveVideo': true, // on est sur de recevoir la video
+                },
+                'optional': [],
+              }
+          );
+
+          // Etablir la description Local
+          await _peerConnection?.setLocalDescription(answer);
+
+          // Envoyer la reponse de retour au serveur
+          _socket?.emit('answer', {
+            'sdp': answer.sdp,
+            'type': answer.type,
+          });
+          print("-------------------------------");
+          print('Sent answer: $answer');
+          print("-------------------------------");
+        } else {
+          print("-------------------------------");
+          print("Error: PeerConnection no esta inicializada");
+          print("-------------------------------");
+        }
+      } catch (e) {
+        print("Error pendant la création de l'offerta (offer): $e");
       }
     });
 
     _socket!.on('answer', (data) async {
-      print("-------------------------------");
-      print('Received answer: $data');
-      print("-------------------------------");
-      RTCSessionDescription answer = RTCSessionDescription(data['sdp'], data['type']);
-      await _peerConnection?.setRemoteDescription(answer);
+      try {
+        // Seuelement si la peerConnection existe
+        if (_peerConnection != null) {
+          print("-------------------------------");
+          print('Received answer: $data');
+          print("-------------------------------");
+
+          // On créé la réponse à partir des données reçues
+          RTCSessionDescription answer = RTCSessionDescription(
+              data['sdp'], data['type']);
+
+          // On établie la description remote
+          await _peerConnection?.setRemoteDescription(answer);
+        } else {
+          print("Error: La peerConnection est null à la reception de l'answer");
+        }
+      } catch (e) {
+        print("Error pendant la manipulation de la réponse (answer): $e");
+      }
     });
 
     _socket!.on('candidate', (data) async {
-      print("-------------------------------");
-      print('Received candidate: $data');
-      print("-------------------------------");
-      RTCIceCandidate candidate = RTCIceCandidate(data['candidate'], data['sdpMid'], data['sdpMLineIndex']);
-      await _peerConnection?.addCandidate(candidate);
+      // Vérification si la peerConnection existe
+      try {
+        if (_peerConnection != null) {
+          print("-------------------------------");
+          print('Received candidate: $data');
+          print("-------------------------------");
+
+          // Avec les données recçues, nous creons le candidate
+          RTCIceCandidate candidate = RTCIceCandidate(
+              data['candidate'], data['sdpMid'], data['sdpMLineIndex']);
+
+          // Ajoutants le candidate à la peerConnection
+          await _peerConnection?.addCandidate(candidate);
+          print("Candidate ICE ajouté");
+        } else {
+          print("PeerConnection n'est pas initializée pour receptionner des candidats.");
+        }
+      } catch (e) {
+        print("Error pendant l'ajout du candidate: $e");
+      }
     });
 
     _socket!.on('translated_text', (data) {
@@ -123,16 +176,22 @@ class _CallScreenState extends State<CallScreen> {
     print("_remoteRenderer------------------------------- $_remoteRenderer");
     print("_localRenderer------------------------------- $_localRenderer");
     print("candidate-------------------------------");
-    if (_peerConnection != null) {
-      print("-------------------------------");
-      print("PeerConnection est déja initialisé");
-      print("-------------------------------");
-      return;
-    }
+    //if (_peerConnection != null) {
+    //  print("-------------------------------");
+    //  print("PeerConnection est déja initialisé");
+    //  print("-------------------------------");
+    //  return;
+    //}
 
-    _peerConnection = await newPeerConnection(_socket!, _remoteRenderer, _localRenderer, (candidate) {
-      _socket?.emit('candidate', candidate.toMap());
-    });
+    _peerConnection ??= await newPeerConnection(
+        _socket!,
+        _remoteRenderer,
+        _localRenderer,
+            (candidate)
+            {
+              _socket?.emit('candidate', candidate.toMap());
+            }
+    );
 
     if (_peerConnection == null) {
       print("-------------------------------");
@@ -147,12 +206,17 @@ class _CallScreenState extends State<CallScreen> {
       _isCallActive = true;
     });
 
+    ////////////////////////////////////////
+    // Flux Local
+    // On s'asure que le flux local est bien ajouté
     _localStream = await navigator.mediaDevices.getUserMedia({
       'audio': true,
       'video': true,
     });
-    _peerConnection?.addStream(_localStream!);
+
+    _peerConnection?.addStream(_localStream!); // On ajoute le Stream local à la peerConnection
     _localRenderer.srcObject = _localStream;
+    /////////////////////////////////////////
 
     RTCSessionDescription offer = await _peerConnection!.createOffer();
     await _peerConnection?.setLocalDescription(offer);
